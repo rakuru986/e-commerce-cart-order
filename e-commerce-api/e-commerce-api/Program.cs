@@ -7,6 +7,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true)
+    .Build();
+
+var portNumber = configuration.GetValue<int>("AppSettings:PortNumber");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,4 +29,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+app.Run($"http://localhost:{portNumber}");
