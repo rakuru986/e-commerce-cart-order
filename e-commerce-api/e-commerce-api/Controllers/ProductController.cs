@@ -19,7 +19,7 @@ namespace e_commerce_api.Controllers
 
         // GET: api/<ProductController>
         [HttpGet]
-        public ActionResult<IEnumerable<Product>> GetProducts()
+        public ActionResult<Product> GetProducts()
         {
             var products = _productService.GetProducts();
             return Ok(products);

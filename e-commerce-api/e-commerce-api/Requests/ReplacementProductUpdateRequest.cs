@@ -4,9 +4,12 @@ namespace e_commerce_api.Requests
 {
     public class ReplacementProductUpdateRequest
     {
-        public int? ProductId { get; set; }
-        public int? Quantity { get; set; }
+        public ReplacedWithInfo ReplacedWith { get; set; }
+    }
 
-        public OrderProduct ReplacedWith { get; set; }
+    public class ReplacedWithInfo
+    {
+        public int Id { get; set; }
+        public int Quantity { get; set; }
     }
 }
