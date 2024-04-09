@@ -1,3 +1,5 @@
+using e_commerce_api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,12 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: true)
-    .Build();
-
-var portNumber = configuration.GetValue<int>("AppSettings:PortNumber");
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 var app = builder.Build();
 
@@ -29,4 +27,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run($"http://localhost:{portNumber}");
+app.Run();

@@ -43,7 +43,7 @@ namespace e_commerce_api.Services
             
             if (order == null)
             {
-                return null;
+                throw new Exception("Not found");
             }
 
             var responseOrder = new Order
@@ -68,7 +68,7 @@ namespace e_commerce_api.Services
         public void UpdateOrder(string order_id, OrderUpdateRequest request)
         {
             var order = _orders.FirstOrDefault(o => o.Id == order_id);
- 
+
             if (order == null)
             {
                 throw new Exception("Order not found");
@@ -76,6 +76,11 @@ namespace e_commerce_api.Services
 
             if (!string.IsNullOrWhiteSpace(request.Status))
             {
+                if (request.Status.ToUpper() != "PAID")
+                {
+                    throw new Exception("Invalid order status");
+                }
+
                 order.Status = request.Status;
             }
         }
@@ -86,7 +91,7 @@ namespace e_commerce_api.Services
 
             if (order == null)
             {
-                throw new Exception("Order not found");
+                throw new Exception("Not found");
             }
 
             return order.Products;
@@ -97,10 +102,16 @@ namespace e_commerce_api.Services
             var order = _orders.FirstOrDefault(o => o.Id == order_id);
             var products = _productService.GetProductsByIds(productIds);
 
-            if (order == null || products.Count == 0)
+            if (order == null)
             {
-                throw new ArgumentException("Invalid parameters");
+                throw new Exception("Not found");
             }
+
+            if (products.Count == 0)
+            {
+                throw new Exception("Invalid parameters");
+            }
+
 
             foreach (var product in products)
             {
@@ -120,8 +131,11 @@ namespace e_commerce_api.Services
                     });
                 }
 
-                decimal total = decimal.Parse(order.Amount.Total, CultureInfo.InvariantCulture);
-                decimal price = decimal.Parse(product.Price, CultureInfo.InvariantCulture);
+                decimal total;
+                decimal.TryParse(order.Amount.Total, NumberStyles.Number, CultureInfo.InvariantCulture, out total);
+
+                decimal price;
+                decimal.TryParse(product.Price, NumberStyles.Number, CultureInfo.InvariantCulture, out price);
 
                 decimal newTotal = total + price;
 
@@ -137,14 +151,14 @@ namespace e_commerce_api.Services
 
             if (order == null)
             {
-                throw new Exception("Order not found");
+                throw new Exception("Not found");
             }
 
             var orderProduct = order.Products.FirstOrDefault(op => op.Id == product_id);
 
             if (orderProduct == null)
             {
-                throw new Exception("Product not found in order");
+                throw new Exception("Not found");
             }
 
             if (request.Quantity.HasValue)
@@ -163,14 +177,14 @@ namespace e_commerce_api.Services
 
             if (order == null)
             {
-                throw new Exception("Order not found");
+                throw new Exception("Not found");
             }
 
-            var orderProduct = order.Products.FirstOrDefault(op => op.ProductId == int.Parse(product_id));
+            var orderProduct = order.Products.FirstOrDefault(op => op.Id == product_id);
 
             if (orderProduct == null)
             {
-                throw new Exception("Product not found in order");
+                throw new Exception("Not found");
             }
 
             if (request.ReplacedWith != null && request.ReplacedWith?.Quantity != null)
@@ -182,15 +196,13 @@ namespace e_commerce_api.Services
                     orderProduct.ReplacedWith = newProduct;
                     orderProduct.Quantity = request.ReplacedWith.Quantity; 
 
-                    order.Amount.Total = order.Products.Sum(op => decimal.Parse(op.Price, CultureInfo.InvariantCulture) * op.Quantity).ToString();
+                    order.Amount.Total = order.Products.Sum(op => decimal.Parse(newProduct.Price, CultureInfo.InvariantCulture) * op.Quantity).ToString();
                 }
                 else
                 {
-                    throw new Exception("Product not found in order");
+                    throw new Exception("Not found");
                 }
             }
-            // Handle case where request.ReplacedWith is null or invalid
-
             return order;
         }
     }

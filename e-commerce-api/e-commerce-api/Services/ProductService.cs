@@ -31,7 +31,6 @@ namespace e_commerce_api.Services
         public List<Product> GetProductsByIds(List<int> productIds)
         {
             var selectedProducts = _products.Where(p => productIds.Contains(p.Id)).ToList();
-
             return selectedProducts;
         }
     }

@@ -3,6 +3,7 @@ using e_commerce_api.Requests;
 using e_commerce_api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace e_commerce_api.Controllers
 {
@@ -21,32 +22,66 @@ namespace e_commerce_api.Controllers
         public ActionResult<Order> CreateOrder()
         {
             var newOrder = _orderService.CreateOrder();
-            return CreatedAtAction(nameof(GetOrder), new { order_id = newOrder.Id }, newOrder);
+
+            AddCustomHeaders(JsonConvert.SerializeObject(newOrder));
+
+            return StatusCode(201, newOrder);
         }
 
         [HttpGet("{order_id}")]
         public ActionResult<Order> GetOrder(string order_id)
         {
-            var order = _orderService.GetOrder(order_id);
-            if (order == null)
+            try
             {
-                return NotFound();
+                var order = _orderService.GetOrder(order_id);
+
+                AddCustomHeaders(JsonConvert.SerializeObject(order));
+
+                return Ok(order);
             }
-            return Ok(order);
+            catch (Exception ex)
+            {
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return BadRequest(JsonConvert.SerializeObject(ex.Message));
+            } 
         }
 
         [HttpPatch("{order_id}")]
         public IActionResult UpdateOrder(string order_id, [FromBody] OrderUpdateRequest request)
         {
-            _orderService.UpdateOrder(order_id, request);
-            return Ok("OK");
+            try
+            {
+                _orderService.UpdateOrder(order_id, request);
+                
+                var response = JsonConvert.SerializeObject("OK");
+                //AddCustomHeaders(response);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return BadRequest(JsonConvert.SerializeObject(ex.Message));
+            }
         }
 
         [HttpGet("{order_id}/products")]
         public ActionResult<OrderProduct> GetOrderProducts(string order_id)
         {
-            var products = _orderService.GetOrderProducts(order_id);
-            return Ok(products);
+            try
+            {
+                var products = _orderService.GetOrderProducts(order_id);
+
+                AddCustomHeaders(JsonConvert.SerializeObject(products));
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return NotFound(JsonConvert.SerializeObject(ex.Message));
+            }
+            
         }
 
         [HttpPost("{order_id}/products")]
@@ -55,49 +90,66 @@ namespace e_commerce_api.Controllers
             try
             {
                 _orderService.AddProductsToOrder(order_id, productIds);
-                return CreatedAtAction(nameof(GetOrderProducts), new { order_id }, null);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(JsonConvert.SerializeObject(ex.Message));
+
+                var response = JsonConvert.SerializeObject("OK");
+                //AddCustomHeaders(response);
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                var errorResponse = new
-                {
-                    errors = new
-                    {
-                        detail = "Bad Request"
-                    }
-                };
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return NotFound(JsonConvert.SerializeObject(ex.Message));
+            }
+            
+        }
 
-                return BadRequest(errorResponse);
+        [HttpPatch("{order_id}/products/{product_id}")] 
+        public IActionResult UpdateProductQuantity(string order_id, string product_id, [FromBody] ProductQuantityUpdateRequest request)
+        {
+            try
+            {
+                _orderService.UpdateProductQuantity(order_id, product_id, request);
+
+                var response = JsonConvert.SerializeObject("OK");
+                // AddCustomHeaders(response);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return NotFound(JsonConvert.SerializeObject(ex.Message));
             }
         }
 
-        [HttpPatch("{order_id}/products/{product_id}")]
-        public IActionResult UpdateProductQuantity(string order_id, string product_id, [FromBody] ProductQuantityUpdateRequest request)
-        {
-            _orderService.UpdateProductQuantity(order_id, product_id, request);
-            return NoContent() ;
-        }
-
-        [HttpPatch("{order_id}/products/{product_id}")]
+        [HttpPost("{order_id}/products/{product_id}")]
         public IActionResult ReplaceProduct(string order_id, string product_id, [FromBody] ReplacementProductUpdateRequest request)
         {
             try
             {
                 _orderService.ReplaceProduct(order_id, product_id, request);
-                return Ok("Product replaced successfully");
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
+                var response = JsonConvert.SerializeObject("OK");
+                // AddCustomHeaders(response);
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { errors = new { detail = "Bad Request" } });
+                AddCustomHeaders(JsonConvert.SerializeObject(ex.Message));
+                return NotFound(JsonConvert.SerializeObject(ex.Message));
             }
+        }
+
+        private void AddCustomHeaders(string contentLength)
+        {
+            
+            int byteCount = Encoding.UTF8.GetByteCount(contentLength);
+
+            Response.Headers.Add("Content-Length", byteCount.ToString());
+            Response.Headers.Add("Connection", "keep-alive");
+            Response.Headers.Add("Cache-Control", "max-age=0, private, must-revalidate");
+            Response.Headers.Add("x-request-id", Guid.NewGuid().ToString());
         }
     }
 }
