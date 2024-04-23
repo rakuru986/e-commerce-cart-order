@@ -1,3 +1,12 @@
+Things Missing:
+
+- Installation steps incorredt in Readme
+- No tests
+- Database models reflected in API
+- Changing port option missing
+- Calcualting the tota amount of products incorret (OrderService AddProductsToOrder Line 134)
+- If the ordes is paid, cannot change the order
+
 E-Commerce API
 
 Overview
